@@ -9,6 +9,7 @@ description = "Luminance-based diffusion data prep and training orchestration."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+  "numpy>=1.26",
   "PyYAML>=6.0",
   "Pillow>=10.0",
   "requests>=2.31",

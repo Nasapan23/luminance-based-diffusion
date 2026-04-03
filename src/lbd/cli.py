@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 
 from lbd.data.build_base100k import resume_build_base100k, run_build_base100k
+from lbd.data.download_real_subset import run_download_real_subset
 from lbd.data.ingest import run_ingest
 from lbd.infer.comfyui import run_comfyui_stage
 from lbd.logging_utils import setup_logging
@@ -26,6 +27,12 @@ def _build_parser() -> argparse.ArgumentParser:
 
     ingest_parser = data_sub.add_parser("ingest", help="Ingest source datasets into unified index.")
     ingest_parser.add_argument("--config", required=True, type=Path)
+
+    download_parser = data_sub.add_parser(
+        "download-real-subset",
+        help="Download real-image subset from COCO / Places / OpenImages.",
+    )
+    download_parser.add_argument("--config", required=True, type=Path)
 
     build_parser = data_sub.add_parser(
         "build-base100k",
@@ -81,6 +88,10 @@ def main(argv: list[str] | None = None) -> int:
     setup_logging()
 
     if args.namespace == "data":
+        if args.data_command == "download-real-subset":
+            run_download_real_subset(config_path=args.config)
+            LOGGER.info("Real subset download complete.")
+            return 0
         if args.data_command == "ingest":
             output = run_ingest(config_path=args.config)
             LOGGER.info("Ingest complete: %s", output)
