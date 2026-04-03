@@ -10,8 +10,17 @@ Preparation and orchestration repository for:
 
 ## Quick Start
 
+One-command environment bootstrap (creates `.venv`, installs CUDA PyTorch with CPU fallback, installs all project deps):
+
 ```bash
-python -m pip install -e .[dev]
+scripts/bootstrap_env.ps1
+# or
+scripts/bootstrap_env.sh
+```
+
+Then activate venv and run:
+
+```bash
 python -m lbd.cli data ingest --config configs/sources.yaml
 python -m lbd.cli data build-base100k --config configs/build_base100k.yaml
 python -m lbd.cli data resume --run-id <run_id>
@@ -31,3 +40,4 @@ scripts/run_real_1k.ps1
 - Inference runs write resolved workflows and outputs under `runs/infer/<run_id>/`.
 - Training runtime policy prefers CUDA automatically and falls back to CPU when CUDA is unavailable.
 - `run_smoke_1k.*` uses synthetic images by design; use `run_real_1k.*` for real-data subset checks.
+- For bootstrap overrides: `-TorchChannel cu124` on PowerShell or `TORCH_CHANNEL=cu124 scripts/bootstrap_env.sh`.

@@ -5,9 +5,9 @@ __pycache__/
 .venv/
 .env
 
-data/raw/
-data/base100k/
-runs/
+# Dataset, generated images, checkpoints, and run artifacts
+data/**
+runs/**
 
 !data/.gitkeep
 !runs/.gitkeep

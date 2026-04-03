@@ -18,6 +18,14 @@ dependencies = [
 dev = [
   "pytest>=8.0",
 ]
+train = [
+  "accelerate>=0.33",
+  "datasets>=2.19",
+  "diffusers>=0.29",
+  "opencv-python>=4.9",
+  "safetensors>=0.4",
+  "transformers>=4.41",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}

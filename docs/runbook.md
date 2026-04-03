@@ -2,8 +2,22 @@
 
 ## 1) Environment
 
+One command setup:
+
 ```bash
-python -m pip install -e .[dev]
+scripts/bootstrap_env.ps1
+# or
+scripts/bootstrap_env.sh
+```
+
+Optional CUDA channel override:
+- PowerShell: `scripts/bootstrap_env.ps1 -TorchChannel cu124`
+- Bash: `TORCH_CHANNEL=cu124 scripts/bootstrap_env.sh`
+
+Manual alternative:
+
+```bash
+python -m pip install -e .[dev,train]
 ```
 
 Install official ComfyUI (UI + API server):
