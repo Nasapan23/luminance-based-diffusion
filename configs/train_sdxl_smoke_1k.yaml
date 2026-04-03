@@ -1,0 +1,23 @@
+command:
+  accelerate_binary: accelerate
+  script: external/diffusers/examples/text_to_image/train_text_to_image_sdxl.py
+  args:
+    pretrained_model_name_or_path: "stabilityai/stable-diffusion-xl-base-1.0"
+    train_data_dir: "data/base1k/gray/train"
+    resolution: 256
+    train_batch_size: 1
+    gradient_accumulation_steps: 1
+    mixed_precision: "no"
+    learning_rate: "1e-6"
+    max_train_steps: 50
+    output_dir: "runs/train_sdxl_smoke_1k"
+
+runtime:
+  device: auto
+  prefer_cuda: true
+  allow_cpu_fallback: true
+  mixed_precision:
+    cuda: fp16
+    cpu: "no"
+  accelerate_launch_args: []
+  env: {}

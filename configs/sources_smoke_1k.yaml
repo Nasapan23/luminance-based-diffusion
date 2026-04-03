@@ -1,0 +1,31 @@
+output_index_csv: data/base1k/meta/ingest_index.csv
+threads: 16
+sources:
+  - id: coco
+    type: coco
+    enabled: true
+    raw_dir: data/raw_smoke/coco
+    local_globs:
+      - images/**/*.jpg
+    captions_json: annotations/captions_train2017.json
+    fallback_caption: "smoke coco image"
+    download_enabled: false
+
+  - id: places2
+    type: places2
+    enabled: true
+    raw_dir: data/raw_smoke/places2
+    local_globs:
+      - images/**/*.jpg
+    fallback_caption: "smoke places image"
+    download_enabled: false
+
+  - id: openimages
+    type: openimages
+    enabled: true
+    raw_dir: data/raw_smoke/openimages
+    local_globs:
+      - images/**/*.jpg
+    captions_csv: metadata/captions.csv
+    fallback_caption: "smoke openimages image"
+    download_enabled: false

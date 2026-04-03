@@ -1,0 +1,21 @@
+command:
+  accelerate_binary: accelerate
+  script: external/diffusers/examples/text_to_image/train_text_to_image_lora_sdxl.py
+  args:
+    pretrained_model_name_or_path: "runs/train_sdxl_grayscale/checkpoint-last"
+    train_data_dir: "data/base100k/gray/train"
+    resolution: 1024
+    train_batch_size: 1
+    learning_rate: "1e-4"
+    rank: 32
+    output_dir: "runs/train_lora_vase_grayscale"
+
+runtime:
+  device: auto
+  prefer_cuda: true
+  allow_cpu_fallback: true
+  mixed_precision:
+    cuda: fp16
+    cpu: "no"
+  accelerate_launch_args: []
+  env: {}

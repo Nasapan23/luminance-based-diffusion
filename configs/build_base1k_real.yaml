@@ -1,0 +1,16 @@
+run_name: base1k_real
+runs_root: runs
+input_index_csv: data/base1k_real/meta/ingest_index.csv
+output_root: data/base1k_real
+
+target_total: 1000
+split_counts:
+  train: 800
+  val: 100
+  test: 100
+
+seed: 42
+threads: 16
+batch_size: 128
+copy_mode: copy
+dedupe_by_sha256: true

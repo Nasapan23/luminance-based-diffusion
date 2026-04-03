@@ -1,0 +1,16 @@
+run_name: base100k
+runs_root: runs
+input_index_csv: data/base100k/meta/ingest_index.csv
+output_root: data/base100k
+
+target_total: 100000
+split_counts:
+  train: 80000
+  val: 10000
+  test: 10000
+
+seed: 42
+threads: 16
+batch_size: 512
+copy_mode: copy
+dedupe_by_sha256: true

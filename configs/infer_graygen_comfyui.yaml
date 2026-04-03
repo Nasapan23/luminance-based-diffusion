@@ -1,0 +1,38 @@
+backend: comfyui
+run_name: graygen_vase
+runs_root: runs/infer
+seed: 1337
+randomize_missing_seed: false
+
+comfyui:
+  base_url: "http://127.0.0.1:8188"
+  client_id: "lbd-comfyui-client"
+  timeout_sec: 60
+  prompt_timeout_sec: 1800
+  poll_interval_sec: 2
+  upload_inputs: true
+
+model:
+  checkpoint_name: "YOUR_GRAYSCALE_SDXL_CHECKPOINT.safetensors"
+  lora_name: "YOUR_VASE_GRAYSCALE_LORA.safetensors"
+  lora_strength_model: 1.0
+  lora_strength_clip: 1.0
+
+defaults:
+  prompt: "ancient greek amphora, symmetric ceramic vase, detailed ornamental bands, strong studio lighting, high contrast grayscale photograph"
+  negative_prompt: "blurry, low quality, distorted geometry, artifacts"
+  width: 1024
+  height: 1024
+  steps: 35
+  cfg: 6.0
+  sampler_name: "euler"
+  scheduler: "normal"
+  denoise: 1.0
+  batch_size: 1
+  filename_prefix: "lbd/graygen"
+
+jobs:
+  - job_id: "gray_001"
+    seed: 1337
+  - job_id: "gray_002"
+    seed: 1338

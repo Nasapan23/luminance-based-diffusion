@@ -1,0 +1,50 @@
+output_index_csv: data/base100k/meta/ingest_index.csv
+threads: 16
+sources:
+  - id: coco
+    type: coco
+    enabled: true
+    raw_dir: data/raw/coco
+    local_globs:
+      - images/**/*.jpg
+      - images/**/*.jpeg
+      - images/**/*.png
+      - images/**/*.webp
+    captions_json: annotations/captions_train2017.json
+    fallback_caption: "real-world photo"
+    download_enabled: false
+    download_urls:
+      - "http://images.cocodataset.org/zips/train2017.zip"
+      - "http://images.cocodataset.org/annotations/annotations_trainval2017.zip"
+    extract_archives: false
+
+  - id: places2
+    type: places2
+    enabled: true
+    raw_dir: data/raw/places2
+    local_globs:
+      - images/**/*.jpg
+      - images/**/*.jpeg
+      - images/**/*.png
+      - images/**/*.webp
+    fallback_caption: "scene photograph"
+    download_enabled: false
+    download_urls:
+      - "http://data.csail.mit.edu/places/places365/places365standard_easyformat.tar"
+    extract_archives: false
+
+  - id: openimages
+    type: openimages
+    enabled: true
+    raw_dir: data/raw/openimages
+    local_globs:
+      - images/**/*.jpg
+      - images/**/*.jpeg
+      - images/**/*.png
+      - images/**/*.webp
+    captions_csv: metadata/captions.csv
+    fallback_caption: "open images photo"
+    download_enabled: false
+    download_urls:
+      - "https://storage.googleapis.com/openimages/web/download_v7.html"
+    extract_archives: false

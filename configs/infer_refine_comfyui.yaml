@@ -1,0 +1,35 @@
+backend: comfyui
+run_name: refine_vase
+runs_root: runs/infer
+seed: 4040
+randomize_missing_seed: false
+
+comfyui:
+  base_url: "http://127.0.0.1:8188"
+  client_id: "lbd-comfyui-client"
+  timeout_sec: 60
+  prompt_timeout_sec: 1800
+  poll_interval_sec: 2
+  upload_inputs: true
+
+model:
+  checkpoint_name: "YOUR_GRAYSCALE_SDXL_CHECKPOINT.safetensors"
+  lora_name: "YOUR_VASE_GRAYSCALE_LORA.safetensors"
+  lora_strength_model: 1.0
+  lora_strength_clip: 1.0
+
+defaults:
+  prompt: "ancient greek amphora, realistic ceramic vase, refined detail, realistic reflections, studio lighting"
+  negative_prompt: "blurry, low quality, over-smoothed, artifacts"
+  steps: 30
+  cfg: 5.5
+  sampler_name: "euler"
+  scheduler: "normal"
+  denoise: 0.18
+  batch_size: 1
+  filename_prefix: "lbd/refine"
+  input_image: "data/experiments/inputs/recolor_example.jpg"
+
+jobs:
+  - job_id: "refine_001"
+    seed: 4040
