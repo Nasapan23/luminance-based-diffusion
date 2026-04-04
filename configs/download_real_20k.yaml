@@ -19,3 +19,7 @@ sources:
     count: 6666
     output_dir: data/raw/openimages
     index_tsv_url: "https://storage.googleapis.com/cvdf-datasets/oid/open-images-dataset-validation.tsv"
+    max_batches: 40
+    max_no_progress_batches: 8
+    max_attempt_jobs: 120000
+    cooldown_sec: 0.5

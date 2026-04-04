@@ -12,8 +12,19 @@ OUTPUT_ROOT="$ROOT/data/vaze_bw"
 # Optional cap for faster experiments. 0 means "use all valid images".
 VAZE_MAX_IMAGES="${VAZE_MAX_IMAGES:-0}"
 
-python -m lbd.cli data ingest --config "$INGEST_CFG"
+log() {
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
+}
 
+start_ts="$(date +%s)"
+log "START: amphora prep pipeline"
+log "Config: VAZE_MAX_IMAGES=$VAZE_MAX_IMAGES"
+
+log "Step 1/4: ingest local data/vaze images"
+python -m lbd.cli data ingest --config "$INGEST_CFG"
+log "READY 1/4: ingest finished"
+
+log "Step 2/4: generate auto build config"
 python - "$INDEX_CSV" "$BUILD_CFG" "$OUTPUT_ROOT" "$VAZE_MAX_IMAGES" <<'PY'
 import csv
 import sys
@@ -76,9 +87,13 @@ with build_cfg.open("w", encoding="utf-8") as handle:
 print(f"Prepared build config: {build_cfg}")
 print(f"Valid images={valid_count} | target_total={target_total} | split={config['split_counts']}")
 PY
+log "READY 2/4: build config generated -> $BUILD_CFG"
 
+log "Step 3/4: build color+grayscale amphora dataset"
 python -m lbd.cli data build-base100k --config "$BUILD_CFG"
+log "READY 3/4: dataset build finished"
 
+log "Step 4/4: write metadata.jsonl for LoRA training"
 python - "$OUTPUT_ROOT" <<'PY'
 import csv
 import json
@@ -116,9 +131,11 @@ with meta_jsonl.open("w", encoding="utf-8") as handle:
 
 print(f"Wrote {len(rows_out)} rows -> {meta_jsonl}")
 PY
+log "READY 4/4: metadata.jsonl generated"
 
 echo ""
-echo "Amphora dataset prep complete."
+elapsed="$(( $(date +%s) - start_ts ))"
+log "READY: amphora prep pipeline finished in ${elapsed}s"
 echo "Gray train dir: data/vaze_bw/gray/train"
 echo "Caption file: data/vaze_bw/gray/train/metadata.jsonl"
 echo "Next: bash scripts/run_train_lora_vaze.sh --dry-run"

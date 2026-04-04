@@ -10,6 +10,7 @@ import tarfile
 import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from time import sleep
 from typing import Any
 from urllib.parse import urlparse
 
@@ -220,12 +221,32 @@ def _run_openimages(config: dict[str, Any], repo_root: Path, seed: int, threads:
     current = existing_count()
     done_total = 0
     failed_total = 0
+    attempted_jobs_total = 0
     cursor = 0
+    batch_count = 0
+    no_progress_batches = 0
+    max_batches = int(config.get("max_batches", 40))
+    max_no_progress_batches = int(config.get("max_no_progress_batches", 8))
+    max_attempt_jobs = int(config.get("max_attempt_jobs", max(count * 20, count)))
+    cooldown_sec = float(config.get("cooldown_sec", 0.5))
+    stop_reason = "target_reached_or_rows_exhausted"
+
     while current < count and cursor < len(rows):
+        if batch_count >= max_batches:
+            stop_reason = f"max_batches_reached({max_batches})"
+            LOGGER.warning("OpenImages early-stop: %s", stop_reason)
+            break
+        if attempted_jobs_total >= max_attempt_jobs:
+            stop_reason = f"max_attempt_jobs_reached({max_attempt_jobs})"
+            LOGGER.warning("OpenImages early-stop: %s", stop_reason)
+            break
+
+        current_before = current
         needed = count - current
         batch_size = max(needed * 3, threads * 4)
         batch = rows[cursor : cursor + batch_size]
         cursor += batch_size
+        batch_count += 1
 
         jobs: list[tuple[str, Path]] = []
         for row in batch:
@@ -238,25 +259,43 @@ def _run_openimages(config: dict[str, Any], repo_root: Path, seed: int, threads:
 
         if not jobs:
             continue
+
+        attempted_jobs_total += len(jobs)
         done, failed = _download_many(jobs, threads=threads, timeout_sec=120.0)
         done_total += done
         failed_total += failed
         current = existing_count()
+
+        if current > current_before:
+            no_progress_batches = 0
+        else:
+            no_progress_batches += 1
+            if no_progress_batches >= max_no_progress_batches:
+                stop_reason = f"no_progress_batches_reached({max_no_progress_batches})"
+                LOGGER.warning("OpenImages early-stop: %s", stop_reason)
+                break
+
         LOGGER.info(
-            "OpenImages progress: current=%s target=%s attempted_done=%s attempted_failed=%s",
+            "OpenImages progress: current=%s target=%s attempted_done=%s attempted_failed=%s attempted_jobs=%s batch=%s",
             current,
             count,
             done_total,
             failed_total,
+            attempted_jobs_total,
+            batch_count,
         )
+        if cooldown_sec > 0:
+            sleep(cooldown_sec)
 
     current = existing_count()
     LOGGER.info(
-        "OpenImages download complete. requested=%s available=%s attempted_done=%s attempted_failed=%s",
+        "OpenImages download complete. requested=%s available=%s attempted_done=%s attempted_failed=%s attempted_jobs=%s stop_reason=%s",
         count,
         current,
         done_total,
         failed_total,
+        attempted_jobs_total,
+        stop_reason,
     )
 
     captions_rows: list[dict[str, str]] = []

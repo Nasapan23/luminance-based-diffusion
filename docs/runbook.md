@@ -164,8 +164,11 @@ bash scripts/run_real_20k.sh
 This runs:
 - `configs/download_real_20k.yaml`
 - `configs/sources.yaml`
-- `configs/build_base100k.yaml` (configured to 20k output)
+- auto-generated `configs/build_base20k.auto.yaml` (target up to 20k based on available valid images after download)
 - `configs/train_sdxl.yaml` (`--dry-run`)
+
+Note:
+- OpenImages may return HTTP `429` (rate limit). The downloader now early-stops after repeated no-progress batches and the pipeline continues with available data.
 
 ## 11) Local Amphora (`data/vaze`) -> Grayscale + LoRA (Linux)
 
