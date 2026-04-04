@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import logging
 import math
 import random
@@ -193,6 +194,17 @@ def _write_csv(path: Path, rows: list[dict[str, str]], fieldnames: list[str]) ->
         writer = csv.DictWriter(handle, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(rows)
+
+
+def _write_metadata_jsonl(rows: list[dict[str, str]], image_dir: Path, image_key: str) -> None:
+    image_dir.mkdir(parents=True, exist_ok=True)
+    metadata_path = image_dir / "metadata.jsonl"
+    with metadata_path.open("w", encoding="utf-8") as handle:
+        for row in rows:
+            image_name = Path(row[image_key]).name
+            text = str(row.get("caption", "")).strip()
+            payload = {"file_name": image_name, "text": text}
+            handle.write(json.dumps(payload, ensure_ascii=True) + "\n")
 
 
 def _build_items(
@@ -467,6 +479,14 @@ def _finalize_manifests(
     ]
     _write_csv(selected_path, selected_items, selected_fieldnames)
     _write_csv(meta_dir / "selected_items.csv", selected_items, selected_fieldnames)
+
+    train_items = [
+        item
+        for item in selected_items
+        if item["split"] == "train" and item_status_lookup.get(item["item_id"]) != "failed"
+    ]
+    _write_metadata_jsonl(train_items, output_root / "gray" / "train", "gray_path")
+    _write_metadata_jsonl(train_items, output_root / "color" / "train", "color_path")
 
 
 def _load_selected_items(path: Path) -> list[dict[str, str]]:
