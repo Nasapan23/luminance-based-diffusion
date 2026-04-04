@@ -1,0 +1,21 @@
+seed: 42
+threads: 16
+sources:
+  coco:
+    enabled: true
+    count: 6667
+    output_dir: data/raw/coco
+    annotations_url: "http://images.cocodataset.org/annotations/annotations_trainval2017.zip"
+    base_image_url: "http://images.cocodataset.org/train2017"
+
+  places2:
+    enabled: true
+    count: 6667
+    output_dir: data/raw/places2
+    tar_url: "http://data.csail.mit.edu/places/places365/val_256.tar"
+
+  openimages:
+    enabled: true
+    count: 6666
+    output_dir: data/raw/openimages
+    index_tsv_url: "https://storage.googleapis.com/cvdf-datasets/oid/open-images-dataset-validation.tsv"

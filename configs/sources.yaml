@@ -1,4 +1,4 @@
-output_index_csv: data/base100k/meta/ingest_index.csv
+output_index_csv: data/base20k/meta/ingest_index.csv
 threads: 16
 sources:
   - id: coco
