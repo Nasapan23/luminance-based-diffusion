@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -178,6 +179,37 @@ def _prepend_pythonpath(env: dict[str, str], path: Path) -> None:
     env["PYTHONPATH"] = os.pathsep.join([candidate, *parts])
 
 
+def _resolve_output_dir(config: dict, repo_root: Path) -> Path | None:
+    command_cfg = dict(config.get("command", {}))
+    args_cfg = dict(command_cfg.get("args", {}))
+    output_dir = args_cfg.get("output_dir")
+    if output_dir in (None, ""):
+        return None
+    return _resolve_script_path(str(output_dir), repo_root)
+
+
+def _run_with_logfile(cmd: list[str], env: dict[str, str], log_path: Path) -> None:
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8") as handle:
+        handle.write(f"$ {' '.join(cmd)}\n")
+        handle.flush()
+        with subprocess.Popen(
+            cmd,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        ) as process:
+            assert process.stdout is not None
+            for line in process.stdout:
+                sys.stdout.write(line)
+                handle.write(line)
+            return_code = process.wait()
+            if return_code != 0:
+                raise subprocess.CalledProcessError(return_code, cmd)
+
+
 def run_training_command(
     config_path: Path,
     dry_run: bool = False,
@@ -186,6 +218,7 @@ def run_training_command(
     root = (repo_root or Path.cwd()).resolve()
     config = load_yaml(config_path)
     cmd, env_overrides, runtime_plan = _build_train_command(config, root)
+    output_dir = _resolve_output_dir(config, root)
     cuda_state = runtime_plan.get("cuda_state", {})
     LOGGER.info(
         "Training runtime: device=%s use_cpu=%s cuda_available=%s device_name=%s",
@@ -206,5 +239,10 @@ def run_training_command(
     if external_diffusers_src.exists():
         _prepend_pythonpath(env, external_diffusers_src)
         LOGGER.info("Prepended external diffusers to PYTHONPATH: %s", external_diffusers_src)
-    subprocess.run(cmd, check=True, env=env)
+    if output_dir is not None:
+        log_path = output_dir / "train.log"
+        LOGGER.info("Streaming training output to log file: %s", log_path)
+        _run_with_logfile(cmd, env=env, log_path=log_path)
+    else:
+        subprocess.run(cmd, check=True, env=env)
     return cmd

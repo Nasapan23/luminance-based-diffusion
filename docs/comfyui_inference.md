@@ -35,6 +35,11 @@ in:
 - `configs/infer_recolor_comfyui.yaml`
 - `configs/infer_refine_comfyui.yaml`
 
+Recommended stage split:
+- `graygen`: grayscale SDXL checkpoint + grayscale/amphora LoRA
+- `recolor`: color-capable SDXL checkpoint for prompt-guided img2img recolor
+- `refine`: optional stronger color/refiner checkpoint
+
 ## 3) Configure Stage Inputs
 
 - `graygen`: no input image needed.
@@ -56,3 +61,26 @@ python -m lbd.cli infer graygen --config configs/infer_graygen_comfyui.yaml
 ```
 
 Repeat for `recolor` and `refine`.
+
+## 5) Chained Prompt Recolor Pipeline
+
+This repo also supports:
+
+```bash
+prompt -> graygen -> recolor -> refine
+```
+
+with automatic passing of stage outputs into the next stage:
+
+```bash
+python -m lbd.cli infer pipeline \
+  --gray-config configs/infer_graygen_comfyui.yaml \
+  --recolor-config configs/infer_recolor_comfyui.yaml \
+  --refine-config configs/infer_refine_comfyui.yaml
+```
+
+Shell wrapper:
+
+```bash
+scripts/run_infer_pipeline.sh
+```

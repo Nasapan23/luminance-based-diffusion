@@ -10,7 +10,12 @@ command:
     gradient_checkpointing: true
     mixed_precision: "fp16"
     learning_rate: "1e-6"
-    max_train_steps: 100000
+    logging_steps: 10
+    checkpointing_steps: 200
+    checkpoints_total_limit: 3
+    # 1,800 steps keeps the training phase around 4-5 hours on a single RTX 4090
+    # under a conservative ~8-10s/optimizer-step assumption for SDXL 1024 training.
+    max_train_steps: 1800
     output_dir: "runs/train_sdxl_grayscale"
 
 runtime:

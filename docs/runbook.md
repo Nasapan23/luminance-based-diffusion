@@ -121,6 +121,15 @@ Each run writes:
 - `runs/infer/<run_id>/events.csv`
 - `runs/infer/<run_id>/outputs/*`
 
+Chained prompt recolor pipeline:
+
+```bash
+python -m lbd.cli infer pipeline \
+  --gray-config configs/infer_graygen_comfyui.yaml \
+  --recolor-config configs/infer_recolor_comfyui.yaml \
+  --refine-config configs/infer_refine_comfyui.yaml
+```
+
 ## 8) 1k Smoke E2E Check
 
 This creates synthetic data for three sources, builds a 1k dataset, and validates training launch config:

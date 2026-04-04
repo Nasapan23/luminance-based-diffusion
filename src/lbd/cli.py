@@ -8,6 +8,7 @@ from lbd.data.build_base100k import resume_build_base100k, run_build_base100k
 from lbd.data.download_real_subset import run_download_real_subset
 from lbd.data.ingest import run_ingest
 from lbd.infer.comfyui import run_comfyui_stage
+from lbd.infer.pipeline import run_chained_comfyui_pipeline
 from lbd.logging_utils import setup_logging
 from lbd.train.launch import run_training_command
 
@@ -79,6 +80,15 @@ def _build_parser() -> argparse.ArgumentParser:
     infer_refine.add_argument("--config", required=True, type=Path)
     infer_refine.add_argument("--dry-run", action="store_true")
 
+    infer_pipeline = infer_sub.add_parser(
+        "pipeline",
+        help="Run graygen -> recolor -> optional refine chained ComfyUI pipeline.",
+    )
+    infer_pipeline.add_argument("--gray-config", required=True, type=Path)
+    infer_pipeline.add_argument("--recolor-config", required=True, type=Path)
+    infer_pipeline.add_argument("--refine-config", type=Path)
+    infer_pipeline.add_argument("--dry-run", action="store_true")
+
     return parser
 
 
@@ -124,6 +134,15 @@ def main(argv: list[str] | None = None) -> int:
                 dry_run=args.dry_run,
             )
             LOGGER.info("Inference complete. run_id=%s", run_id)
+            return 0
+        if args.infer_command == "pipeline":
+            outputs = run_chained_comfyui_pipeline(
+                gray_config_path=args.gray_config,
+                recolor_config_path=args.recolor_config,
+                refine_config_path=args.refine_config,
+                dry_run=args.dry_run,
+            )
+            LOGGER.info("Pipeline inference complete. outputs=%s", outputs)
             return 0
         raise ValueError(f"Unsupported infer command: {args.infer_command}")
 

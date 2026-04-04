@@ -13,8 +13,8 @@ comfyui:
   upload_inputs: true
 
 model:
-  checkpoint_name: "YOUR_GRAYSCALE_SDXL_CHECKPOINT.safetensors"
-  lora_name: "YOUR_VASE_GRAYSCALE_LORA.safetensors"
+  checkpoint_name: "YOUR_COLOR_SDXL_CHECKPOINT.safetensors"
+  lora_name: "YOUR_VASE_RECOLOR_LORA.safetensors"
   lora_strength_model: 1.0
   lora_strength_clip: 1.0
 
