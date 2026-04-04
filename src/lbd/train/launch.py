@@ -31,6 +31,13 @@ def _append_arg(cmd: list[str], key: str, value) -> None:
     cmd.extend([flag, str(value)])
 
 
+def _resolve_script_path(script_value: str, repo_root: Path) -> Path:
+    script_path = Path(script_value)
+    if not script_path.is_absolute():
+        script_path = (repo_root / script_path).resolve()
+    return script_path
+
+
 def _detect_cuda_state() -> dict[str, Any]:
     try:
         import torch  # type: ignore
@@ -140,15 +147,16 @@ def _build_train_command(config: dict, repo_root: Path) -> tuple[list[str], dict
     if not script_value:
         raise ValueError("Training config missing command.script")
 
-    script_path = Path(script_value)
-    if not script_path.is_absolute():
-        script_path = (repo_root / script_path).resolve()
+    script_path = _resolve_script_path(str(script_value), repo_root)
+    wrapper_path = (repo_root / "src" / "lbd" / "train" / "accelerate_entry.py").resolve()
+    if not wrapper_path.exists():
+        raise FileNotFoundError(f"Training wrapper missing: {wrapper_path}")
 
     selected_mixed_precision = runtime_plan.get("selected_mixed_precision")
     if selected_mixed_precision is not None:
         args_cfg["mixed_precision"] = str(selected_mixed_precision)
 
-    cmd = [accelerate_binary, "launch", *runtime_plan["launch_args"], str(script_path)]
+    cmd = [accelerate_binary, "launch", *runtime_plan["launch_args"], str(wrapper_path), str(script_path)]
     for key, value in args_cfg.items():
         _append_arg(cmd, key, value)
 

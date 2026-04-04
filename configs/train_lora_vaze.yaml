@@ -23,4 +23,5 @@ runtime:
     cpu: "no"
   accelerate_launch_args: []
   env:
+    LBD_DISABLE_CUDNN: "1"
     PYTORCH_CUDA_ALLOC_CONF: "expandable_segments:True"

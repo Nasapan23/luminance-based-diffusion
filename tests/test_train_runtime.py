@@ -5,6 +5,10 @@ from pathlib import Path
 from lbd.train import launch
 
 
+def _norm(value: str) -> str:
+    return value.replace("\\", "/")
+
+
 def _base_config() -> dict:
     return {
         "command": {
@@ -45,6 +49,8 @@ def test_runtime_auto_falls_back_to_cpu_when_cuda_missing(monkeypatch) -> None:
     assert plan["selected_device"] == "cpu"
     assert plan["use_cpu"] is True
     assert "--cpu" in cmd
+    assert _norm(cmd[3]).endswith("src/lbd/train/accelerate_entry.py")
+    assert _norm(cmd[4]).endswith("external/diffusers/examples/text_to_image/train_text_to_image_sdxl.py")
     assert "--mixed_precision" in cmd
     assert "no" in cmd
     assert env == {}
@@ -69,5 +75,6 @@ def test_runtime_auto_uses_cuda_when_available(monkeypatch) -> None:
     assert plan["selected_device"] == "cuda"
     assert plan["use_cpu"] is False
     assert "--cpu" not in cmd
+    assert _norm(cmd[2]).endswith("src/lbd/train/accelerate_entry.py")
+    assert _norm(cmd[3]).endswith("external/diffusers/examples/text_to_image/train_text_to_image_sdxl.py")
     assert env["CUDA_VISIBLE_DEVICES"] == "0"
-
