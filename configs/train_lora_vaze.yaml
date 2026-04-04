@@ -1,0 +1,23 @@
+command:
+  accelerate_binary: accelerate
+  script: external/diffusers/examples/text_to_image/train_text_to_image_lora_sdxl.py
+  args:
+    pretrained_model_name_or_path: "stabilityai/stable-diffusion-xl-base-1.0"
+    train_data_dir: "data/vaze_bw/gray/train"
+    resolution: 1024
+    train_batch_size: 1
+    gradient_accumulation_steps: 4
+    learning_rate: "1e-4"
+    rank: 32
+    max_train_steps: 4000
+    output_dir: "runs/train_lora_amphora_bw"
+
+runtime:
+  device: auto
+  prefer_cuda: true
+  allow_cpu_fallback: true
+  mixed_precision:
+    cuda: fp16
+    cpu: "no"
+  accelerate_launch_args: []
+  env: {}

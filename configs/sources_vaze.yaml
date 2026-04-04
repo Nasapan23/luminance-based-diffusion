@@ -1,0 +1,17 @@
+output_index_csv: data/vaze_bw/meta/ingest_index.csv
+threads: 16
+sources:
+  - id: amphora
+    type: local
+    enabled: true
+    raw_dir: data/vaze
+    local_globs:
+      - "**/*.jpg"
+      - "**/*.jpeg"
+      - "**/*.png"
+      - "**/*.webp"
+      - "**/*.bmp"
+      - "**/*.tif"
+      - "**/*.tiff"
+    fallback_caption: "amphora ceramic vase"
+    download_enabled: false

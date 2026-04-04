@@ -11,4 +11,6 @@ data/**
 runs/**
 
 !data/.gitkeep
+!data/vaze/
+!data/vaze/**
 !runs/.gitkeep

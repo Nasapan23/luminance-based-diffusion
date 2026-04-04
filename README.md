@@ -34,6 +34,8 @@ python -m lbd.cli infer refine --config configs/infer_refine_comfyui.yaml --dry-
 scripts/run_smoke_1k.ps1
 scripts/run_real_1k.ps1
 bash scripts/run_real_20k.sh
+bash scripts/run_prepare_vaze_bw.sh
+bash scripts/run_train_lora_vaze.sh --dry-run
 ```
 
 Linux RTX 4090 setup + full pipeline:

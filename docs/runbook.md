@@ -166,3 +166,27 @@ This runs:
 - `configs/sources.yaml`
 - `configs/build_base100k.yaml` (configured to 20k output)
 - `configs/train_sdxl.yaml` (`--dry-run`)
+
+## 11) Local Amphora (`data/vaze`) -> Grayscale + LoRA (Linux)
+
+Put your amphora images under:
+- `data/vaze/**`
+
+Build color+grayscale dataset automatically (with split auto-calculated from available valid images):
+
+```bash
+bash scripts/run_prepare_vaze_bw.sh
+```
+
+Optional fast cap (example: first 5000 valid images):
+
+```bash
+VAZE_MAX_IMAGES=5000 bash scripts/run_prepare_vaze_bw.sh
+```
+
+Then run LoRA:
+
+```bash
+bash scripts/run_train_lora_vaze.sh --dry-run
+bash scripts/run_train_lora_vaze.sh
+```

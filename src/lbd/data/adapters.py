@@ -162,6 +162,8 @@ class OpenImagesSourceAdapter(BaseSourceAdapter):
 
 def create_source_adapter(source_cfg: dict, repo_root: Path) -> BaseSourceAdapter:
     source_type = str(source_cfg.get("type", "local")).lower().strip()
+    if source_type in {"local", "base"}:
+        return BaseSourceAdapter(source_cfg, repo_root)
     if source_type == "coco":
         return CocoSourceAdapter(source_cfg, repo_root)
     if source_type == "places2":
@@ -170,4 +172,3 @@ def create_source_adapter(source_cfg: dict, repo_root: Path) -> BaseSourceAdapte
         return OpenImagesSourceAdapter(source_cfg, repo_root)
     LOGGER.warning("Unknown source type '%s'. Falling back to base adapter.", source_type)
     return BaseSourceAdapter(source_cfg, repo_root)
-
