@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export PYTHONPATH="$ROOT/src"
 INGEST_INDEX="$ROOT/data/base20k/meta/ingest_index.csv"
 AUTO_BUILD_CFG="$ROOT/configs/build_base20k.auto.yaml"
+DOWNLOAD_CFG="${DOWNLOAD_CFG:-$ROOT/configs/download_real_20k_stable.yaml}"
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
@@ -13,12 +14,13 @@ log() {
 start_ts="$(date +%s)"
 
 log "START: real 20k pipeline"
+log "Download config: $DOWNLOAD_CFG"
 log "Step 0/4: setup diffusers examples"
 bash "$ROOT/scripts/setup_diffusers_examples.sh"
 log "READY 0/4: setup diffusers examples"
 
 log "Step 1/4: download real subset"
-python -m lbd.cli data download-real-subset --config "$ROOT/configs/download_real_20k.yaml"
+python -m lbd.cli data download-real-subset --config "$DOWNLOAD_CFG"
 log "READY 1/4: download real subset"
 
 log "Step 2/4: ingest sources"
