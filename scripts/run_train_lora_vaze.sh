@@ -18,6 +18,10 @@ if ! python -c "import peft" >/dev/null 2>&1; then
   log "READY: peft installed"
 fi
 
+log "Ensuring compatible training deps (transformers<5, peft<0.12)"
+python -m pip install "transformers>=4.41,<5" "peft>=0.11,<0.12"
+log "READY: dependency compatibility check complete"
+
 python -m lbd.cli train lora --config "$ROOT/configs/train_lora_vaze.yaml" "$@"
 
 elapsed="$(( $(date +%s) - start_ts ))"

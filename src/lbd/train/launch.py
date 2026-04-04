@@ -157,6 +157,19 @@ def _build_train_command(config: dict, repo_root: Path) -> tuple[list[str], dict
     return cmd, runtime_plan["env_overrides"], runtime_plan
 
 
+def _prepend_pythonpath(env: dict[str, str], path: Path) -> None:
+    candidate = str(path.resolve())
+    current = env.get("PYTHONPATH", "")
+    if not current:
+        env["PYTHONPATH"] = candidate
+        return
+
+    parts = [p for p in current.split(os.pathsep) if p]
+    if candidate in parts:
+        return
+    env["PYTHONPATH"] = os.pathsep.join([candidate, *parts])
+
+
 def run_training_command(
     config_path: Path,
     dry_run: bool = False,
@@ -181,5 +194,9 @@ def run_training_command(
 
     env = os.environ.copy()
     env.update(env_overrides)
+    external_diffusers_src = (root / "external" / "diffusers" / "src").resolve()
+    if external_diffusers_src.exists():
+        _prepend_pythonpath(env, external_diffusers_src)
+        LOGGER.info("Prepended external diffusers to PYTHONPATH: %s", external_diffusers_src)
     subprocess.run(cmd, check=True, env=env)
     return cmd

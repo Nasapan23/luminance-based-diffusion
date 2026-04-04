@@ -10,7 +10,7 @@ import tarfile
 import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from time import sleep
+from time import monotonic, sleep
 from typing import Any
 from urllib.parse import urlparse
 
@@ -30,17 +30,60 @@ def _resolve_path(value: str | Path, repo_root: Path) -> Path:
     return (repo_root / path).resolve()
 
 
-def _download_file(url: str, dst: Path, timeout_sec: float = 120.0) -> Path:
+def _download_file(
+    url: str,
+    dst: Path,
+    timeout_sec: float = 120.0,
+    *,
+    log_label: str | None = None,
+    log_progress: bool = False,
+    progress_interval_sec: float = 15.0,
+) -> Path:
     dst.parent.mkdir(parents=True, exist_ok=True)
     if dst.exists() and dst.stat().st_size > 0:
+        if log_progress:
+            size_mb = dst.stat().st_size / (1024 * 1024)
+            label = log_label or dst.name
+            LOGGER.info("%s already exists (%.1f MiB), skipping.", label, size_mb)
         return dst
+
+    label = log_label or dst.name
+    if log_progress:
+        LOGGER.info("Download start: %s <- %s", label, url)
 
     with requests.get(url, stream=True, timeout=timeout_sec) as response:
         response.raise_for_status()
+        total_bytes = int(response.headers.get("content-length", "0") or "0")
+        downloaded_bytes = 0
+        last_log = monotonic()
         with dst.open("wb") as handle:
             for chunk in response.iter_content(chunk_size=1024 * 256):
                 if chunk:
                     handle.write(chunk)
+                    downloaded_bytes += len(chunk)
+                if log_progress and monotonic() - last_log >= progress_interval_sec:
+                    if total_bytes > 0:
+                        pct = (downloaded_bytes / total_bytes) * 100.0
+                        LOGGER.info(
+                            "Download progress: %s %.1f%% (%d/%d MiB)",
+                            label,
+                            pct,
+                            downloaded_bytes // (1024 * 1024),
+                            total_bytes // (1024 * 1024),
+                        )
+                    else:
+                        LOGGER.info(
+                            "Download progress: %s %d MiB",
+                            label,
+                            downloaded_bytes // (1024 * 1024),
+                        )
+                    last_log = monotonic()
+    if log_progress:
+        LOGGER.info(
+            "Download complete: %s (%d MiB)",
+            label,
+            downloaded_bytes // (1024 * 1024),
+        )
     return dst
 
 
@@ -60,18 +103,26 @@ def _download_many(
     jobs: list[tuple[str, Path]],
     threads: int,
     timeout_sec: float,
+    *,
+    progress_label: str = "downloads",
+    progress_interval_sec: float = 15.0,
 ) -> tuple[int, int]:
     if not jobs:
         return 0, 0
 
+    total = len(jobs)
     done = 0
     failed = 0
+    started = monotonic()
+    last_log = started
+    LOGGER.info("%s start: total=%s threads=%s", progress_label, total, threads)
     with ThreadPoolExecutor(max_workers=threads) as executor:
         future_map = {
             executor.submit(_download_file, url, dst, timeout_sec): (url, dst)
             for url, dst in jobs
         }
-        for future in as_completed(future_map):
+        for completed in as_completed(future_map):
+            future = completed
             url, dst = future_map[future]
             try:
                 future.result()
@@ -79,6 +130,27 @@ def _download_many(
             except Exception as exc:
                 failed += 1
                 LOGGER.warning("Download failed: %s -> %s (%s)", url, dst, exc)
+            now = monotonic()
+            finished = done + failed
+            if now - last_log >= progress_interval_sec or finished == total:
+                LOGGER.info(
+                    "%s progress: %s/%s (done=%s failed=%s elapsed=%.1fs)",
+                    progress_label,
+                    finished,
+                    total,
+                    done,
+                    failed,
+                    now - started,
+                )
+                last_log = now
+    LOGGER.info(
+        "%s complete: total=%s done=%s failed=%s elapsed=%.1fs",
+        progress_label,
+        total,
+        done,
+        failed,
+        monotonic() - started,
+    )
     return done, failed
 
 
@@ -87,6 +159,7 @@ def _run_coco(config: dict[str, Any], repo_root: Path, seed: int, threads: int) 
         return
 
     count = int(config.get("count", 334))
+    LOGGER.info("COCO source enabled. target_count=%s", count)
     output_dir = _resolve_path(config.get("output_dir", "data/raw/coco"), repo_root)
     images_dir = output_dir / "images" / "train2017"
     annotations_dir = output_dir / "annotations"
@@ -107,7 +180,12 @@ def _run_coco(config: dict[str, Any], repo_root: Path, seed: int, threads: int) 
 
     zip_name = Path(urlparse(annotations_url).path).name or "annotations_trainval2017.zip"
     zip_path = downloads_dir / zip_name
-    _download_file(annotations_url, zip_path)
+    _download_file(
+        annotations_url,
+        zip_path,
+        log_label="COCO annotations archive",
+        log_progress=True,
+    )
 
     captions_path = annotations_dir / "captions_train2017.json"
     if not captions_path.exists():
@@ -139,7 +217,12 @@ def _run_coco(config: dict[str, Any], repo_root: Path, seed: int, threads: int) 
             continue
         jobs.append((url, dst))
 
-    done, failed = _download_many(jobs, threads=threads, timeout_sec=120.0)
+    done, failed = _download_many(
+        jobs,
+        threads=threads,
+        timeout_sec=120.0,
+        progress_label="COCO images",
+    )
     LOGGER.info("COCO download complete. requested=%s done=%s failed=%s", count, done, failed)
 
 
@@ -148,6 +231,7 @@ def _run_openimages(config: dict[str, Any], repo_root: Path, seed: int, threads:
         return
 
     count = int(config.get("count", 333))
+    LOGGER.info("OpenImages source enabled. target_count=%s", count)
     output_dir = _resolve_path(config.get("output_dir", "data/raw/openimages"), repo_root)
     images_dir = output_dir / "images" / "train"
     metadata_dir = output_dir / "metadata"
@@ -163,7 +247,12 @@ def _run_openimages(config: dict[str, Any], repo_root: Path, seed: int, threads:
         )
     )
     index_tsv_path = downloads_dir / (Path(urlparse(index_tsv_url).path).name or "openimages.tsv")
-    _download_file(index_tsv_url, index_tsv_path)
+    _download_file(
+        index_tsv_url,
+        index_tsv_path,
+        log_label="OpenImages index TSV",
+        log_progress=True,
+    )
 
     rows: list[dict[str, str]] = []
     with index_tsv_path.open("r", encoding="utf-8", newline="") as handle:
@@ -261,7 +350,12 @@ def _run_openimages(config: dict[str, Any], repo_root: Path, seed: int, threads:
             continue
 
         attempted_jobs_total += len(jobs)
-        done, failed = _download_many(jobs, threads=threads, timeout_sec=120.0)
+        done, failed = _download_many(
+            jobs,
+            threads=threads,
+            timeout_sec=120.0,
+            progress_label=f"OpenImages batch {batch_count}",
+        )
         done_total += done
         failed_total += failed
         current = existing_count()
@@ -326,6 +420,7 @@ def _run_places2(config: dict[str, Any], repo_root: Path, count: int) -> None:
     if not bool(config.get("enabled", True)):
         return
 
+    LOGGER.info("Places2 source enabled. target_count=%s", count)
     output_dir = _resolve_path(config.get("output_dir", "data/raw/places2"), repo_root)
     images_dir = output_dir / "images" / "val"
     downloads_dir = output_dir / "downloads"
@@ -336,7 +431,13 @@ def _run_places2(config: dict[str, Any], repo_root: Path, count: int) -> None:
         config.get("tar_url", "http://data.csail.mit.edu/places/places365/val_256.tar")
     )
     tar_path = downloads_dir / (Path(urlparse(tar_url).path).name or "val_256.tar")
-    _download_file(tar_url, tar_path, timeout_sec=300.0)
+    _download_file(
+        tar_url,
+        tar_path,
+        timeout_sec=300.0,
+        log_label="Places2 val_256.tar",
+        log_progress=True,
+    )
 
     existing = list(images_dir.glob("**/*.jpg"))
     if len(existing) >= count:
@@ -391,6 +492,13 @@ def run_download_real_subset(config_path: Path, repo_root: Path | None = None) -
     config = load_yaml(config_path)
     seed = int(config.get("seed", 42))
     threads = int(config.get("threads", 16))
+    LOGGER.info(
+        "Starting real subset download: config=%s seed=%s threads=%s root=%s",
+        config_path,
+        seed,
+        threads,
+        root,
+    )
 
     sources = dict(config.get("sources") or {})
     if not sources:
