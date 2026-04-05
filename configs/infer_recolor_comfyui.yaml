@@ -15,12 +15,12 @@ comfyui:
 model:
   checkpoint_name: "YOUR_COLOR_SDXL_CHECKPOINT.safetensors"
   lora_name: "YOUR_VASE_RECOLOR_LORA.safetensors"
-  lora_strength_model: 1.0
-  lora_strength_clip: 1.0
+  lora_strength_model: 0.7
+  lora_strength_clip: 0.7
 
 defaults:
-  prompt: "ancient greek amphora, ceramic material, deep black glazed body, red ochre painted figures, golden decorative accents, glossy ceramic finish, studio lighting, realistic reflections"
-  negative_prompt: "blurry, low quality, desaturated, geometry distortions, artifacts"
+  prompt: "TARGET_OBJECT, detailed surface finish, painted decoration, glossy material, studio lighting, realistic reflections"
+  negative_prompt: "blurry, low quality, desaturated, geometry distortions, unwanted handles, artifacts"
   steps: 35
   cfg: 6.0
   sampler_name: "euler"

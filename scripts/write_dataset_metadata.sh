@@ -23,6 +23,20 @@ from pathlib import Path
 
 output_root = Path(sys.argv[1]).resolve()
 index_csv = Path(sys.argv[2]).resolve()
+color_caption_overrides = {
+    "amphora": "x23_amphoras",
+}
+
+
+def metadata_caption(row: dict[str, str], path_key: str) -> str:
+    text = str(row.get("caption", "")).strip()
+    if path_key != "color_path":
+        return text
+
+    source_id = str(row.get("source_id", "")).strip()
+    return color_caption_overrides.get(source_id, text)
+
+
 if not index_csv.exists():
     raise FileNotFoundError(f"Missing dataset index: {index_csv}")
 
@@ -45,7 +59,7 @@ for image_dir, path_key in targets:
         for row in train_rows:
             payload = {
                 "file_name": Path(row[path_key]).name,
-                "text": str(row.get("caption", "")).strip(),
+                "text": metadata_caption(row, path_key),
             }
             out.write(json.dumps(payload, ensure_ascii=True) + "\n")
     print(f"Wrote {metadata_path}")

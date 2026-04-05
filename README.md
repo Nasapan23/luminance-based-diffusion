@@ -52,6 +52,7 @@ Linux RTX 4090 setup + full pipeline:
 - The CLI supports tiny local smoke runs and full runs on stronger training hardware.
 - Default full dataset config now targets 20k images at `data/base20k/*`.
 - Inference runs write resolved workflows and outputs under `runs/infer/<run_id>/`.
+- Local `type: local` sources can now read per-image captions from `image.txt` sidecars or optional caption manifests.
 - Training runtime policy prefers CUDA automatically and falls back to CPU when CUDA is unavailable.
 - `run_smoke_1k.*` uses synthetic images by design; use `run_real_1k.*` for real-data subset checks.
 - For bootstrap overrides: `-TorchChannel cu124` on PowerShell or `TORCH_CHANNEL=cu124 scripts/bootstrap_env.sh`.

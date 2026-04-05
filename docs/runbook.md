@@ -188,6 +188,11 @@ Note:
 Put your amphora images under:
 - `data/vaze/**`
 
+Optional but recommended:
+- add `image.txt` sidecars next to local images for per-image captions
+- or point the local source config at `captions_csv` / `captions_jsonl`
+- avoid reusing one overly specific fallback caption across the whole set unless you want the LoRA to learn that class strongly
+
 Build color+grayscale dataset automatically (with split auto-calculated from available valid images):
 
 ```bash

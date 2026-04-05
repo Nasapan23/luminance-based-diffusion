@@ -12,6 +12,12 @@ start_ts="$(date +%s)"
 log "START: amphora color LoRA training"
 log "Config: $ROOT/configs/train_lora_vaze_color.yaml"
 
+if [[ -f "$ROOT/data/vaze_bw/meta/index.csv" ]]; then
+  log "Refreshing amphora color metadata to use x23_amphoras"
+  bash "$ROOT/scripts/write_dataset_metadata.sh" "$ROOT/data/vaze_bw"
+  log "READY: amphora color metadata refreshed"
+fi
+
 if ! python -c "import peft" >/dev/null 2>&1; then
   log "Missing dependency detected: peft. Installing..."
   python -m pip install "peft>=0.11"

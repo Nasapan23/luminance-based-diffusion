@@ -5,6 +5,7 @@ sources:
     type: local
     enabled: true
     raw_dir: data/vaze
+    # Prefer per-image captions via image.txt sidecars or a local captions CSV/JSONL.
     local_globs:
       - "**/*.jpg"
       - "**/*.jpeg"
@@ -13,5 +14,5 @@ sources:
       - "**/*.bmp"
       - "**/*.tif"
       - "**/*.tiff"
-    fallback_caption: "amphora ceramic vase"
+    fallback_caption: "ceramic vessel"
     download_enabled: false

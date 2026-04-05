@@ -54,7 +54,7 @@ in:
 - `configs/infer_refine_comfyui.yaml`
 
 Recommended stage split:
-- `graygen`: grayscale SDXL checkpoint + grayscale/amphora LoRA
+- `graygen`: grayscale SDXL checkpoint + structure LoRA
 - `recolor`: color-capable SDXL checkpoint for prompt-guided img2img recolor
 - `refine`: optional stronger color/refiner checkpoint
 
@@ -63,6 +63,8 @@ Recommended stage split:
 - `graygen`: no input image needed.
 - `recolor`: set `defaults.input_image` (or per-job `input_image`) to grayscale structure image.
 - `refine`: set `defaults.input_image` (or per-job `input_image`) to recolored image.
+- Replace `TARGET_OBJECT` in the shipped prompts with your real target class or scene.
+- If the LoRA starts pulling generations toward a repeated training-set shape, lower `lora_strength_model` and `lora_strength_clip` before changing samplers.
 
 ## 4) Run
 

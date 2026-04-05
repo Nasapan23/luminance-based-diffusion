@@ -42,6 +42,131 @@ class BaseSourceAdapter:
         return self.fallback_caption
 
 
+class LocalSourceAdapter(BaseSourceAdapter):
+    def __init__(self, source_cfg: dict, repo_root: Path):
+        super().__init__(source_cfg, repo_root)
+        self.sidecar_caption_ext = str(source_cfg.get("sidecar_caption_ext", ".txt")).strip() or ".txt"
+        if not self.sidecar_caption_ext.startswith("."):
+            self.sidecar_caption_ext = f".{self.sidecar_caption_ext}"
+        self.captions_csv = self._resolve_optional_path(source_cfg.get("captions_csv"))
+        self.captions_jsonl = self._resolve_optional_path(source_cfg.get("captions_jsonl"))
+        self.caption_lookup: dict[str, str] = {}
+
+    def _resolve_optional_path(self, value: str | None) -> Path | None:
+        if not value:
+            return None
+        candidate = Path(str(value))
+        return candidate if candidate.is_absolute() else (self.raw_dir / candidate).resolve()
+
+    def _register_caption(self, key: str, caption: str) -> None:
+        normalized_caption = str(caption).strip()
+        normalized_key = str(key).strip()
+        if not normalized_caption or not normalized_key:
+            return
+
+        posix_key = Path(normalized_key).as_posix()
+        self.caption_lookup.setdefault(posix_key, normalized_caption)
+        self.caption_lookup.setdefault(Path(posix_key).name, normalized_caption)
+        self.caption_lookup.setdefault(Path(posix_key).stem, normalized_caption)
+
+    def _row_to_caption(self, row: dict[str, str]) -> tuple[str, str]:
+        key = (
+            row.get("relative_path")
+            or row.get("path")
+            or row.get("file_name")
+            or row.get("filename")
+            or row.get("image")
+            or row.get("ImageID")
+            or row.get("image_id")
+            or row.get("stem")
+            or ""
+        ).strip()
+        caption = (
+            row.get("caption")
+            or row.get("text")
+            or row.get("prompt")
+            or row.get("description")
+            or row.get("title")
+            or ""
+        ).strip()
+        return key, caption
+
+    def refresh_metadata(self) -> None:
+        self.caption_lookup = {}
+
+        if self.captions_csv and self.captions_csv.exists():
+            with self.captions_csv.open("r", encoding="utf-8", newline="") as handle:
+                reader = csv.DictReader(handle)
+                for row in reader:
+                    key, caption = self._row_to_caption(row)
+                    self._register_caption(key, caption)
+            LOGGER.info(
+                "Loaded local CSV caption entries for %s: %s",
+                self.source_id,
+                len(self.caption_lookup),
+            )
+        elif self.captions_csv:
+            LOGGER.warning(
+                "Local captions CSV not found for %s: %s",
+                self.source_id,
+                self.captions_csv,
+            )
+
+        if self.captions_jsonl and self.captions_jsonl.exists():
+            with self.captions_jsonl.open("r", encoding="utf-8") as handle:
+                for line in handle:
+                    text = line.strip()
+                    if not text:
+                        continue
+                    payload = json.loads(text)
+                    if not isinstance(payload, dict):
+                        continue
+                    key, caption = self._row_to_caption(payload)
+                    self._register_caption(key, caption)
+            LOGGER.info(
+                "Loaded local JSONL caption entries for %s: %s",
+                self.source_id,
+                len(self.caption_lookup),
+            )
+        elif self.captions_jsonl:
+            LOGGER.warning(
+                "Local captions JSONL not found for %s: %s",
+                self.source_id,
+                self.captions_jsonl,
+            )
+
+    def _sidecar_caption_for(self, path: Path) -> str:
+        candidates = [
+            path.with_suffix(self.sidecar_caption_ext),
+            Path(f"{path}{self.sidecar_caption_ext}"),
+        ]
+        seen: set[str] = set()
+        for candidate in candidates:
+            candidate_key = candidate.resolve().as_posix() if candidate.exists() else candidate.as_posix()
+            if candidate_key in seen:
+                continue
+            seen.add(candidate_key)
+            if not candidate.exists():
+                continue
+            text = candidate.read_text(encoding="utf-8", errors="ignore").strip()
+            if text:
+                return text
+        return ""
+
+    def caption_for(self, path: Path) -> str:
+        sidecar_caption = self._sidecar_caption_for(path)
+        if sidecar_caption:
+            return sidecar_caption
+
+        rel = path.relative_to(self.raw_dir).as_posix()
+        return (
+            self.caption_lookup.get(rel)
+            or self.caption_lookup.get(path.name)
+            or self.caption_lookup.get(path.stem)
+            or self.fallback_caption
+        )
+
+
 class CocoSourceAdapter(BaseSourceAdapter):
     def __init__(self, source_cfg: dict, repo_root: Path):
         super().__init__(source_cfg, repo_root)
@@ -163,7 +288,7 @@ class OpenImagesSourceAdapter(BaseSourceAdapter):
 def create_source_adapter(source_cfg: dict, repo_root: Path) -> BaseSourceAdapter:
     source_type = str(source_cfg.get("type", "local")).lower().strip()
     if source_type in {"local", "base"}:
-        return BaseSourceAdapter(source_cfg, repo_root)
+        return LocalSourceAdapter(source_cfg, repo_root)
     if source_type == "coco":
         return CocoSourceAdapter(source_cfg, repo_root)
     if source_type == "places2":

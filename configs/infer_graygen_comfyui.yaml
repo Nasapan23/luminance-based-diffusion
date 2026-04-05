@@ -15,12 +15,12 @@ comfyui:
 model:
   checkpoint_name: "YOUR_GRAYSCALE_SDXL_CHECKPOINT.safetensors"
   lora_name: "YOUR_VASE_GRAYSCALE_LORA.safetensors"
-  lora_strength_model: 1.0
-  lora_strength_clip: 1.0
+  lora_strength_model: 0.7
+  lora_strength_clip: 0.7
 
 defaults:
-  prompt: "ancient greek amphora, symmetric ceramic vase, detailed ornamental bands, strong studio lighting, high contrast grayscale photograph"
-  negative_prompt: "blurry, low quality, distorted geometry, artifacts"
+  prompt: "TARGET_OBJECT, centered studio product photo, balanced silhouette, clean background, high contrast grayscale photograph, highly detailed"
+  negative_prompt: "blurry, low quality, distorted geometry, unwanted handles, artifacts"
   width: 1024
   height: 1024
   steps: 35

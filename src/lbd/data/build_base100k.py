@@ -18,6 +18,9 @@ from lbd.utils.image_utils import save_grayscale_rgb
 
 LOGGER = logging.getLogger(__name__)
 ACTIVE_STATUSES = ["pending", "failed", "in_progress", "skipped"]
+COLOR_METADATA_CAPTION_OVERRIDES = {
+    "amphora": "x23_amphoras",
+}
 
 
 def allocate_proportional(capacities: dict[str, int], total_target: int) -> dict[str, int]:
@@ -196,13 +199,22 @@ def _write_csv(path: Path, rows: list[dict[str, str]], fieldnames: list[str]) ->
         writer.writerows(rows)
 
 
+def _metadata_caption_for_row(row: dict[str, str], image_key: str) -> str:
+    text = str(row.get("caption", "")).strip()
+    if image_key != "color_path":
+        return text
+
+    source_id = str(row.get("source_id", "")).strip()
+    return COLOR_METADATA_CAPTION_OVERRIDES.get(source_id, text)
+
+
 def _write_metadata_jsonl(rows: list[dict[str, str]], image_dir: Path, image_key: str) -> None:
     image_dir.mkdir(parents=True, exist_ok=True)
     metadata_path = image_dir / "metadata.jsonl"
     with metadata_path.open("w", encoding="utf-8") as handle:
         for row in rows:
             image_name = Path(row[image_key]).name
-            text = str(row.get("caption", "")).strip()
+            text = _metadata_caption_for_row(row, image_key)
             payload = {"file_name": image_name, "text": text}
             handle.write(json.dumps(payload, ensure_ascii=True) + "\n")
 
