@@ -34,6 +34,10 @@ scripts/setup_comfyui.ps1
 scripts/setup_comfyui.sh
 ```
 
+Windows 11 + AMD RX 7600 / ROCm:
+- `scripts/setup_comfyui.ps1 -TorchBackend rocm-windows -PythonExe "C:\Path\To\Python312\python.exe"`
+- AMD's current Windows ROCm/PyTorch path is inference-only and requires Python `3.12`.
+
 Linux RTX 4090 focused setup:
 - `docs/linux_rtx4090_training.md`
 
@@ -201,4 +205,6 @@ Then run LoRA:
 ```bash
 bash scripts/run_train_lora_vaze.sh --dry-run
 bash scripts/run_train_lora_vaze.sh
+bash scripts/run_train_lora_vaze_color.sh --dry-run
+bash scripts/run_train_lora_vaze_color.sh
 ```

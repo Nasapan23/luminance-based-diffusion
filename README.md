@@ -36,7 +36,12 @@ scripts/run_real_1k.ps1
 bash scripts/run_real_20k.sh
 bash scripts/run_prepare_vaze_bw.sh
 bash scripts/run_train_lora_vaze.sh --dry-run
+bash scripts/run_train_lora_vaze_color.sh --dry-run
 ```
+
+Windows 11 + AMD RX 7600 ComfyUI setup:
+- `scripts/setup_comfyui.ps1 -TorchBackend rocm-windows -PythonExe "C:\Path\To\Python312\python.exe"`
+- AMD's current Windows ROCm path is ComfyUI/PyTorch inference only and requires Python `3.12`.
 
 Linux RTX 4090 setup + full pipeline:
 - `docs/linux_rtx4090_training.md`

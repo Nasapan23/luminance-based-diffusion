@@ -94,48 +94,15 @@ python -m lbd.cli data build-base100k --config "$BUILD_CFG"
 log "READY 3/4: dataset build finished"
 
 log "Step 4/4: write metadata.jsonl for LoRA training"
-python - "$OUTPUT_ROOT" <<'PY'
-import csv
-import json
-import sys
-from pathlib import Path
-
-
-output_root = Path(sys.argv[1])
-index_csv = output_root / "meta" / "index.csv"
-train_dir = output_root / "gray" / "train"
-meta_jsonl = train_dir / "metadata.jsonl"
-
-if not index_csv.exists():
-    raise FileNotFoundError(f"Missing build index: {index_csv}")
-if not train_dir.exists():
-    raise FileNotFoundError(f"Missing train dir: {train_dir}")
-
-rows_out = []
-with index_csv.open("r", encoding="utf-8", newline="") as handle:
-    for row in csv.DictReader(handle):
-        if row.get("split") != "train":
-            continue
-        if row.get("status") == "failed":
-            continue
-        image_name = Path(row["gray_path"]).name
-        caption = (row.get("caption") or "").strip() or "amphora ceramic vase"
-        rows_out.append({"file_name": image_name, "text": caption})
-
-if not rows_out:
-    raise RuntimeError("No train rows found to create metadata.jsonl")
-
-with meta_jsonl.open("w", encoding="utf-8") as handle:
-    for item in rows_out:
-        handle.write(json.dumps(item, ensure_ascii=True) + "\n")
-
-print(f"Wrote {len(rows_out)} rows -> {meta_jsonl}")
-PY
+bash "$ROOT/scripts/write_dataset_metadata.sh" "$OUTPUT_ROOT"
 log "READY 4/4: metadata.jsonl generated"
 
 echo ""
 elapsed="$(( $(date +%s) - start_ts ))"
 log "READY: amphora prep pipeline finished in ${elapsed}s"
 echo "Gray train dir: data/vaze_bw/gray/train"
-echo "Caption file: data/vaze_bw/gray/train/metadata.jsonl"
+echo "Gray caption file: data/vaze_bw/gray/train/metadata.jsonl"
+echo "Color train dir: data/vaze_bw/color/train"
+echo "Color caption file: data/vaze_bw/color/train/metadata.jsonl"
 echo "Next: bash scripts/run_train_lora_vaze.sh --dry-run"
+echo "Next: bash scripts/run_train_lora_vaze_color.sh --dry-run"

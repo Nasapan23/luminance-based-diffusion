@@ -11,12 +11,30 @@ They clone:
 
 into `external/ComfyUI` and create `.venv` with required packages.
 
+Windows 11 + AMD Radeon ROCm path:
+- AMD currently documents `RX 7600` as supported on Windows for ROCm 7.2.1 PyTorch inference.
+- Use the PowerShell installer with the AMD wheel path:
+
+```powershell
+scripts/setup_comfyui.ps1 -TorchBackend rocm-windows -PythonExe "C:\Path\To\Python312\python.exe"
+```
+
+- ROCm on Windows currently requires Python `3.12`.
+- AMD documents Adrenalin driver `26.2.2` for the ROCm 7.2.1 Windows PyTorch release.
+- AMD currently documents Windows as inference-only for Radeon ROCm; training remains a Linux-first path.
+
 Run server (includes web UI and API):
 - `scripts/run_comfyui.ps1`
 - `scripts/run_comfyui.sh`
 
 Default URL:
 - `http://127.0.0.1:8188`
+
+For lower-VRAM AMD cards, AMD recommends trying:
+
+```powershell
+scripts/run_comfyui.ps1 -- --lowvram --disable-pinned-memory
+```
 
 If you change host/port, update `comfyui.base_url` in inference configs.
 
