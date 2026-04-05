@@ -33,7 +33,7 @@ Default URL:
 For lower-VRAM AMD cards, AMD recommends trying:
 
 ```powershell
-scripts/run_comfyui.ps1 -- --lowvram --disable-pinned-memory
+scripts/run_comfyui.ps1 -AmdDefaults
 ```
 
 If you change host/port, update `comfyui.base_url` in inference configs.

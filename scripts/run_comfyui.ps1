@@ -1,10 +1,12 @@
-$ErrorActionPreference = "Stop"
-
 param(
   [string]$ComfyDir = "external/ComfyUI",
-  [string]$Host = "127.0.0.1",
-  [int]$Port = 8188
+  [Alias("Host")]
+  [string]$ListenHost = "127.0.0.1",
+  [int]$Port = 8188,
+  [switch]$AmdDefaults
 )
+
+$ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path "$PSScriptRoot/.."
 $comfyPath = Join-Path $repoRoot $ComfyDir
@@ -16,7 +18,12 @@ if (!(Test-Path $pythonPath)) {
 
 Push-Location $comfyPath
 try {
-  & $pythonPath main.py --listen $Host --port $Port $args
+  $launchArgs = @("--listen", $ListenHost, "--port", $Port)
+  if ($AmdDefaults) {
+    $launchArgs += @("--lowvram", "--disable-pinned-memory")
+  }
+  $launchArgs += $args
+  & $pythonPath main.py @launchArgs
 }
 finally {
   Pop-Location

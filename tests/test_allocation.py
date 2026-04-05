@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from lbd.data.build_base100k import _assign_splits, allocate_proportional
+from lbd.data.build_base100k import _assign_splits, _dedupe_by_hash, allocate_proportional
 
 
 def test_allocate_proportional_matches_target_exactly() -> None:
@@ -28,3 +28,16 @@ def test_assign_splits_exact_counts() -> None:
 
     assert counts == {"train": 80, "val": 10, "test": 10}
 
+
+def test_dedupe_by_hash_uses_sha256_then_raw_path() -> None:
+    rows = [
+        {"sample_id": "a", "raw_path": "a.jpg", "sha256": "same"},
+        {"sample_id": "b", "raw_path": "b.jpg", "sha256": "same"},
+        {"sample_id": "c", "raw_path": "c.jpg", "sha256": ""},
+        {"sample_id": "d", "raw_path": "c.jpg", "sha256": ""},
+        {"sample_id": "e", "raw_path": "e.jpg", "sha256": "unique"},
+    ]
+
+    deduped = _dedupe_by_hash(rows)
+
+    assert [row["sample_id"] for row in deduped] == ["a", "c", "e"]

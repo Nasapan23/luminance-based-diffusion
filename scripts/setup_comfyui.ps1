@@ -1,11 +1,11 @@
-$ErrorActionPreference = "Stop"
-
 param(
   [string]$TargetDir = "external/ComfyUI",
   [string]$PythonExe = "python",
   [ValidateSet("default", "rocm-windows")]
   [string]$TorchBackend = "default"
 )
+
+$ErrorActionPreference = "Stop"
 
 function Get-PythonVersion {
   param(
@@ -74,7 +74,7 @@ try {
   Write-Host "Run with: scripts\\run_comfyui.ps1"
   if ($TorchBackend -eq "rocm-windows") {
     Write-Host "AMD ROCm on Windows uses PyTorch inference support only."
-    Write-Host "For lower-VRAM cards, try: scripts\\run_comfyui.ps1 -- --lowvram --disable-pinned-memory"
+    Write-Host "For lower-VRAM cards, try: scripts\\run_comfyui.ps1 -AmdDefaults"
   }
 }
 finally {

@@ -536,8 +536,10 @@ def run_build_base100k(config_path: Path, repo_root: Path | None = None) -> str:
             raise FileNotFoundError(f"Ingest index not found: {input_index_path}")
 
         all_rows = _read_ingest_index(input_index_path)
-        valid_rows = [row for row in all_rows if _is_true(row.get("valid", "0"))]
-        if bool(config.get("dedupe_by_sha256", True)):
+        raw_valid_rows = [row for row in all_rows if _is_true(row.get("valid", "0"))]
+        dedupe_by_sha256 = bool(config.get("dedupe_by_sha256", True))
+        valid_rows = list(raw_valid_rows)
+        if dedupe_by_sha256:
             valid_rows = _dedupe_by_hash(valid_rows)
 
         target_total = int(config.get("target_total", 100000))
@@ -552,7 +554,10 @@ def run_build_base100k(config_path: Path, repo_root: Path | None = None) -> str:
 
         if len(valid_rows) < target_total:
             raise ValueError(
-                f"Insufficient valid rows: have {len(valid_rows)}, require {target_total}."
+                "Insufficient valid rows after filtering: "
+                f"have {len(valid_rows)}, require {target_total}. "
+                f"Raw valid before dedupe: {len(raw_valid_rows)}. "
+                f"dedupe_by_sha256={dedupe_by_sha256}."
             )
 
         seed = int(config.get("seed", 42))

@@ -35,6 +35,8 @@ from pathlib import Path
 
 import yaml
 
+from lbd.data.build_base100k import _dedupe_by_hash, _is_true
+
 
 ingest_index = Path(sys.argv[1])
 auto_build_cfg = Path(sys.argv[2])
@@ -44,10 +46,17 @@ if not ingest_index.exists():
 with ingest_index.open("r", encoding="utf-8", newline="") as handle:
     rows = list(csv.DictReader(handle))
 
-valid_rows = [r for r in rows if str(r.get("valid", "0")).strip().lower() in {"1", "true", "yes", "y"}]
-valid_count = len(valid_rows)
+valid_rows = [r for r in rows if _is_true(r.get("valid", "0"))]
+raw_valid_count = len(valid_rows)
+if raw_valid_count < 10:
+    raise RuntimeError(f"Too few valid images after ingest: {raw_valid_count}")
+
+valid_count = len(_dedupe_by_hash(valid_rows))
 if valid_count < 10:
-    raise RuntimeError(f"Too few valid images after ingest: {valid_count}")
+    raise RuntimeError(
+        f"Too few valid images after dedupe: {valid_count} "
+        f"(raw valid before dedupe: {raw_valid_count})"
+    )
 
 target_total = min(valid_count, 20000)
 
@@ -79,7 +88,12 @@ with auto_build_cfg.open("w", encoding="utf-8") as handle:
     yaml.safe_dump(cfg, handle, sort_keys=False)
 
 print(f"Auto build config written: {auto_build_cfg}")
-print(f"valid_count={valid_count} target_total={target_total} split={cfg['split_counts']}")
+print(
+    f"raw_valid_count={raw_valid_count} "
+    f"deduped_valid_count={valid_count} "
+    f"target_total={target_total} "
+    f"split={cfg['split_counts']}"
+)
 PY
 log "READY 2.5/4: auto build config generated"
 
